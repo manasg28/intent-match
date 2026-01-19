@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserProfile } from '@/types/user';
+import { UserProfile, Match } from '@/types/user';
 import {
   getDiscoveryProfiles,
   getCurrentUserProfile,
@@ -16,7 +16,7 @@ interface UseDiscoveryReturn {
   error: string | null;
   canLike: boolean;
   noMoreProfiles: boolean;
-  sendProfileLike: (targetType: 'prompt' | 'photo', targetId: string, comment?: string) => Promise<boolean>;
+  sendProfileLike: (targetType: 'prompt' | 'photo', targetId: string, comment?: string) => Promise<{ success: boolean; match?: Match }>;
   passProfile: () => void;
   refreshProfiles: () => Promise<void>;
 }
@@ -87,17 +87,17 @@ export const useDiscovery = (): UseDiscoveryReturn => {
     targetType: 'prompt' | 'photo',
     targetId: string,
     comment?: string
-  ): Promise<boolean> => {
-    if (!user || !currentProfile) return false;
+  ): Promise<{ success: boolean; match?: Match }> => {
+    if (!user || !currentProfile) return { success: false };
 
     const canStillLike = await canSendLike(user.uid);
     if (!canStillLike) {
       setRemainingLikes(0);
-      return false;
+      return { success: false };
     }
 
     try {
-      const success = await sendLike({
+      const result = await sendLike({
         fromUid: user.uid,
         toUid: currentProfile.uid,
         targetType,
@@ -105,15 +105,15 @@ export const useDiscovery = (): UseDiscoveryReturn => {
         comment
       });
 
-      if (success) {
+      if (result.success) {
         setRemainingLikes(prev => Math.max(0, prev - 1));
         advanceToNext();
       }
 
-      return success;
+      return result;
     } catch (err) {
       console.error('Error sending like:', err);
-      return false;
+      return { success: false };
     }
   }, [user, currentProfile, advanceToNext]);
 

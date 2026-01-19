@@ -1,16 +1,17 @@
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  doc, 
-  setDoc, 
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  setDoc,
   getDoc,
   orderBy,
   limit
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { UserProfile, Like, DailyLikeCount, Intent } from '@/types/user';
+import { UserProfile, Like, DailyLikeCount, Intent, Match } from '@/types/user';
+import { checkForMatch } from './matchingService';
 
 const DAILY_LIKE_LIMIT = 5;
 
@@ -52,22 +53,27 @@ export const incrementDailyLikeCount = async (uid: string): Promise<void> => {
   });
 };
 
-export const sendLike = async (like: Omit<Like, 'timestamp'>): Promise<boolean> => {
+export const sendLike = async (like: Omit<Like, 'timestamp'>): Promise<{ success: boolean; match?: Match }> => {
   const canLike = await canSendLike(like.fromUid);
   if (!canLike) {
-    return false;
+    return { success: false };
   }
 
   const likeId = `${like.fromUid}_${like.toUid}`;
   const likeRef = doc(db, 'likes', likeId);
-  
-  await setDoc(likeRef, {
+
+  const likeWithTimestamp = {
     ...like,
     timestamp: new Date()
-  });
+  };
+
+  await setDoc(likeRef, likeWithTimestamp);
 
   await incrementDailyLikeCount(like.fromUid);
-  return true;
+
+  const match = await checkForMatch(likeWithTimestamp as Like);
+
+  return { success: true, match: match || undefined };
 };
 
 export const hasLikedUser = async (fromUid: string, toUid: string): Promise<boolean> => {
@@ -137,23 +143,23 @@ export const getExcludedUserIds = async (uid: string): Promise<Set<string>> => {
   // Get matched users
   const matchesQuery1 = query(
     collection(db, 'matches'),
-    where('user1', '==', uid)
+    where('userA', '==', uid)
   );
   const matchesQuery2 = query(
     collection(db, 'matches'),
-    where('user2', '==', uid)
+    where('userB', '==', uid)
   );
-  
+
   const [matches1, matches2] = await Promise.all([
     getDocs(matchesQuery1),
     getDocs(matchesQuery2)
   ]);
-  
+
   matches1.forEach(doc => {
-    excluded.add(doc.data().user2);
+    excluded.add(doc.data().userB);
   });
   matches2.forEach(doc => {
-    excluded.add(doc.data().user1);
+    excluded.add(doc.data().userA);
   });
 
   return excluded;

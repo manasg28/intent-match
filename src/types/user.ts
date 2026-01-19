@@ -41,3 +41,23 @@ export interface DailyLikeCount {
   date: string; // YYYY-MM-DD
   count: number;
 }
+
+export interface Match {
+  matchId: string;
+  userA: string;
+  userB: string;
+  matchedAt: Date;
+  initiatingLike: {
+    targetType: 'prompt' | 'photo';
+    targetId: string;
+    targetContent: string;
+  };
+}
+
+export interface Message {
+  messageId: string;
+  matchId: string;
+  senderUid: string;
+  text: string;
+  timestamp: Date;
+}

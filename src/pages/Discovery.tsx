@@ -1,12 +1,26 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDiscovery } from '@/hooks/useDiscovery';
 import ProfileCard from '@/components/discovery/ProfileCard';
 import LikeSelector from '@/components/discovery/LikeSelector';
 import DiscoveryEmpty from '@/components/discovery/DiscoveryEmpty';
 import DiscoveryLoading from '@/components/discovery/DiscoveryLoading';
 import DiscoveryError from '@/components/discovery/DiscoveryError';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Match } from '@/types/user';
 
 const Discovery = () => {
+  const navigate = useNavigate();
+  const [matchDialog, setMatchDialog] = useState<Match | null>(null);
+
   const {
     currentProfile,
     remainingLikes,
@@ -24,7 +38,10 @@ const Discovery = () => {
     targetId: string,
     comment?: string
   ) => {
-    await sendProfileLike(targetType, targetId, comment);
+    const result = await sendProfileLike(targetType, targetId, comment);
+    if (result.match) {
+      setMatchDialog(result.match);
+    }
   };
 
   if (isLoading) {
@@ -97,6 +114,26 @@ const Discovery = () => {
           onCancel={() => {}}
         />
       )}
+
+      {/* Match Dialog */}
+      <Dialog open={!!matchDialog} onOpenChange={(open) => !open && setMatchDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>It's a Match!</DialogTitle>
+            <DialogDescription>
+              You both liked each other. Start a conversation now!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setMatchDialog(null)}>
+              Keep Swiping
+            </Button>
+            <Button onClick={() => navigate(`/chat?match=${matchDialog?.matchId}`)}>
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
