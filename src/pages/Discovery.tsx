@@ -1,10 +1,102 @@
+import { useState } from 'react';
+import { useDiscovery } from '@/hooks/useDiscovery';
+import ProfileCard from '@/components/discovery/ProfileCard';
+import LikeSelector from '@/components/discovery/LikeSelector';
+import DiscoveryEmpty from '@/components/discovery/DiscoveryEmpty';
+import DiscoveryLoading from '@/components/discovery/DiscoveryLoading';
+import DiscoveryError from '@/components/discovery/DiscoveryError';
+
 const Discovery = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-foreground">Discovery</h1>
-        <p className="mt-2 text-muted-foreground">Find your match</p>
+  const {
+    currentProfile,
+    remainingLikes,
+    isLoading,
+    error,
+    canLike,
+    noMoreProfiles,
+    sendProfileLike,
+    passProfile,
+    refreshProfiles
+  } = useDiscovery();
+
+  const handleLike = async (
+    targetType: 'prompt' | 'photo',
+    targetId: string,
+    comment?: string
+  ) => {
+    await sendProfileLike(targetType, targetId, comment);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
+          <h1 className="text-lg font-semibold text-foreground text-center">
+            Discovery
+          </h1>
+        </header>
+        <DiscoveryLoading />
       </div>
+    );
+  }
+
+  if (error) {
+    const isProfileError = error.includes('profile');
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
+          <h1 className="text-lg font-semibold text-foreground text-center">
+            Discovery
+          </h1>
+        </header>
+        <DiscoveryError message={error} showProfileLink={isProfileError} />
+      </div>
+    );
+  }
+
+  if (noMoreProfiles) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
+          <h1 className="text-lg font-semibold text-foreground text-center">
+            Discovery
+          </h1>
+        </header>
+        <DiscoveryEmpty onRefresh={refreshProfiles} isLoading={isLoading} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between max-w-md mx-auto">
+          <h1 className="text-lg font-semibold text-foreground">
+            Discovery
+          </h1>
+          <span className="text-sm text-muted-foreground">
+            {remainingLikes} likes left
+          </span>
+        </div>
+      </header>
+
+      {/* Profile Content */}
+      <main className="max-w-md mx-auto p-4">
+        {currentProfile && <ProfileCard profile={currentProfile} />}
+      </main>
+
+      {/* Action Bar */}
+      {currentProfile && (
+        <LikeSelector
+          profile={currentProfile}
+          canLike={canLike}
+          remainingLikes={remainingLikes}
+          onLike={handleLike}
+          onPass={passProfile}
+          onCancel={() => {}}
+        />
+      )}
     </div>
   );
 };
