@@ -79,7 +79,7 @@ const Discovery = () => {
             Discovery
           </h1>
         </header>
-        <DiscoveryEmpty onRefresh={refreshProfiles} isLoading={isLoading} />
+        <DiscoveryEmpty />
       </div>
     );
   }
