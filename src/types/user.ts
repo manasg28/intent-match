@@ -1,5 +1,14 @@
 export type Intent = 'casual' | 'serious' | 'marriage';
 
+export type PlaceType = 'cafe' | 'gym' | 'park' | 'library' | 'campus' | 'club' | 'other';
+
+export interface UserPlace {
+  id: string;
+  name: string;
+  type: PlaceType;
+  addedAt: Date;
+}
+
 export interface UserPrompt {
   id: string;
   question: string;
@@ -18,6 +27,9 @@ export interface UserProfile {
   age: number;
   gender: 'male' | 'female' | 'non-binary';
   intent: Intent;
+  city: string;
+  neighborhood?: string;
+  places: UserPlace[];
   prompts: UserPrompt[];
   photos: UserPhoto[];
   profileComplete: boolean;
